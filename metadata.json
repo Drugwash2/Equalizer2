@@ -1,0 +1,12 @@
+{
+  "uuid": "pa-equalizer2@drugwash",
+  "name": "Equalizer 2",
+  "version" : "1.0.0",
+  "description": "An applet to control sound equalization (LADSPA version support)",
+  "comments" : "Requires one of the alternate versions of pulseaudio-equalizer to be installed.",
+  "author": "Drugwash",
+  "contributors": "jschug.com (original author)",
+  "website": "https://github.com/Drugwash2",
+  "max-instances": "1",
+  "last-edited": 1659642914
+}

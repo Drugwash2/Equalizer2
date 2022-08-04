@@ -1,0 +1,70 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-08-04 22:42+0300\n"
+"PO-Revision-Date: 2022-08-04 22:46+0300\n"
+"Last-Translator: Drugwash <drugwash@mail.com>\n"
+"Language-Team: \n"
+"Language: hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.1.1\n"
+
+#: applet.js:51
+msgid "pulseaudio-equalizer is not installed"
+msgstr ""
+
+#: applet.js:167
+msgid "Equalizer"
+msgstr "Ekvalizátor"
+
+#: applet.js:172
+msgid "Presets"
+msgstr "Előbeállítások"
+
+#: applet.js:175
+msgid "Settings"
+msgstr "Beállítások"
+
+#: applet.js:182
+msgid "Help"
+msgstr ""
+
+#: applet.js:186
+msgid ": 'xdg-open' cannot open the help file "
+msgstr ""
+
+#: applet.js:189
+msgid ": missing help file "
+msgstr ""
+
+#: applet.js:214
+msgid "Preset: "
+msgstr "Előbeállítás:"
+
+#. metadata.json->name
+msgid "Equalizer 2"
+msgstr "Ekvalizátor 2"
+
+#. metadata.json->description
+#, fuzzy
+#| msgid "An applet to control sound equalization"
+msgid "An applet to control sound equalization (LADSPA version support)"
+msgstr "Hang ekvalizátor szabályozó kisalkalmazás"
+
+#. metadata.json->comments
+msgid ""
+"Requires one of the alternate versions of pulseaudio-equalizer to be "
+"installed."
+msgstr ""
+
+#. metadata.json->contributors
+msgid "jschug.com (original author)"
+msgstr ""

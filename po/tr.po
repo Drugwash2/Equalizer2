@@ -1,0 +1,71 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Gökhan GÖKKAYA <gokhanlnx@gmail.com>, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-08-04 22:42+0300\n"
+"PO-Revision-Date: 2022-08-04 22:53+0300\n"
+"Last-Translator: Drugwash <drugwash@mail.com>\n"
+"Language-Team: Linux Mint Türkiye <gokhanlnx@gmail.com>\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.1.1\n"
+
+#: applet.js:51
+msgid "pulseaudio-equalizer is not installed"
+msgstr ""
+
+#: applet.js:167
+msgid "Equalizer"
+msgstr "Dengeleyici"
+
+#: applet.js:172
+msgid "Presets"
+msgstr "Ayarlanmışlar"
+
+#: applet.js:175
+msgid "Settings"
+msgstr "Ayarlar"
+
+#: applet.js:182
+msgid "Help"
+msgstr ""
+
+#: applet.js:186
+msgid ": 'xdg-open' cannot open the help file "
+msgstr ""
+
+#: applet.js:189
+msgid ": missing help file "
+msgstr ""
+
+#: applet.js:214
+msgid "Preset: "
+msgstr "Ayarlanmışlar: "
+
+#. metadata.json->name
+msgid "Equalizer 2"
+msgstr "Dengeleyici 2"
+
+#. metadata.json->description
+#, fuzzy
+#| msgid "An applet to control sound equalization"
+msgid "An applet to control sound equalization (LADSPA version support)"
+msgstr "Ses dengeleme denetimi için bir uygulamacık"
+
+#. metadata.json->comments
+msgid ""
+"Requires one of the alternate versions of pulseaudio-equalizer to be "
+"installed."
+msgstr ""
+
+#. metadata.json->contributors
+msgid "jschug.com (original author)"
+msgstr ""

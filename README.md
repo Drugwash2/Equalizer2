@@ -68,7 +68,7 @@ sudo apt install -f -y
 To manually run the GUI interface of this newer version type in Terminal:
 
 ```
-pulseaudio-equalizer-ladspa-gtk
+pulseaudio-equalizer-gtk
 ```
 
 ***

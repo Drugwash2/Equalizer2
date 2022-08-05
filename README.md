@@ -79,7 +79,7 @@ To do that *right-click* the panel, go to **Troubleshoot**, launch **Looking Gla
 
 This may seem convoluted as compared to opening the **Applets** panel and turning the applet *off* and then *on* again, but it provides an easy way to check whether anything goes wrong by switching to the **Log** tab and looking for related errors, if any.
 
-==Please note== that the equalizer itself will have to be turned on **before** switching audio output sources - such as turning on bluetooth headphones - otherwise it will **not** detect and switch to that audio output. This applet has a switch for that in its menu.
+==Please note== that the equalizer itself will have to be turned off **before** switching audio output sources - such as turning on bluetooth headphones - otherwise it will **not** detect and switch to that audio output. This applet has a switch for that in its menu.
 
 ***
 

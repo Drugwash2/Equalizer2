@@ -68,7 +68,7 @@ sudo apt install -f -y
 To manually run the GUI interface of this newer version type in Terminal:
 
 ```
-pulseaudio-equalizer-gtk
+pulseaudio-equalizer-ladspa-gtk
 ```
 
 ***
@@ -85,4 +85,4 @@ This may seem convoluted as compared to opening the **Applets** panel and turnin
 
 All credit goes to the original author of this applet **jschug(.com)** and any other later contributors before me.
 
-*Drugwash, 2022.08.04*
+*Drugwash, 2022.08.15*

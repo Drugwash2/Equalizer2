@@ -20,7 +20,7 @@ const EXEGUI = EXEC + "-gtk";
 
 const CONFIG_DIR_OLD = GLib.get_home_dir() + "/.pulse";
 const CONFIG_DIR_NEW = GLib.get_user_config_dir() + "/pulse";
-const CONFIG_DIR = GLib.file_test(CONFIG_DIR_NEW, GLib.FileTest.IS_DIR)? CONFIG_DIR_NEW: CONFIG_DIR_OLD;
+const CONFIG_DIR = GLib.file_test(CONFIG_DIR_NEW, GLib.FileTest.IS_DIR) ? CONFIG_DIR_NEW: CONFIG_DIR_OLD;
 
 const EQCONFIG = CONFIG_DIR + "/equalizerrc";
 const EQPRESETS = EQCONFIG + ".availablepresets";
@@ -92,6 +92,7 @@ Config.prototype = {
 
 			GLib.spawn_command_line_sync(EXEC + " interface.applysettings");
 			this.load();
+			this.emit("changed");
 		} catch (e) {
 			global.logError(e);
 		}
@@ -143,16 +144,17 @@ Config.prototype = {
 };
 Signals.addSignalMethods(Config.prototype);
 
-function EqualizerApplet(metadata, orientation, panel_height) {
-	this._init(metadata, orientation, panel_height);
+function EqualizerApplet(metadata, orientation, panel_height, instanceId) {
+	this._init(metadata, orientation, panel_height, instanceId);
 }
 
 EqualizerApplet.prototype = {
 	__proto__: Applet.IconApplet.prototype,
 	_init: function(metadata, orientation, panel_height, instanceId) {
 		Applet.IconApplet.prototype._init.call(this, orientation, panel_height, instanceId);
+		this.id = instanceId;
 		if (EXEC == "")
-			AppletManager._removeAppletFromPanel(UUID, instanceId);
+			AppletManager._removeAppletFromPanel(UUID, this.id);
 		try {
 			this.config = new Config();
 			this.config.connect("changed", Lang.bind(this, this._configChanged));
@@ -175,7 +177,8 @@ EqualizerApplet.prototype = {
 			this._settingsItem = new PopupMenu.PopupMenuItem(_("Settings"));
 			this.menu.addMenuItem(this._settingsItem);
 			this._settingsItem.connect("activate", function() {
-				GLib.spawn_command_line_async(EXEGUI);
+//				GLib.spawn_command_line_async(EXEGUI);
+				Util.spawnCommandLineAsync(EXEGUI, null, null);
 			});
 			//_context_menu_item_help
 			if (GLib.file_test(HLPTXT, GLib.FileTest.EXISTS)) {
@@ -187,18 +190,24 @@ EqualizerApplet.prototype = {
 				}));
 				this._applet_context_menu.addMenuItem(this.help_menu);
 			} else global.logError(UUID + _(": missing help file ") + HLPTXT);
+			//_context_menu_item_reload_applet
+			let cmnd = `dbus-send --session --dest=org.Cinnamon.LookingGlass --type=method_call ` +
+							`/org/Cinnamon/LookingGlass org.Cinnamon.LookingGlass.ReloadExtension ` +
+							`string:'${UUID}' string:'APPLET'`;
+			this._applet_context_menu.addCommandlineAction(_("Reload applet [forced]"), cmnd);
 
 			this._configChanged();
 		} catch (e) {
 			global.logError(e);
-			AppletManager._removeAppletFromPanel(UUID, instanceId);
+			AppletManager._removeAppletFromPanel(UUID, this.id);
 		}
 	},
 	on_applet_clicked: function(event) {
 		this.menu.toggle();
 	},
 	_configChanged: function() {
-		this._enabledSwitch.setToggleState(this.config.enabled());
+		let enabled = this.config.enabled();
+		this._enabledSwitch.setToggleState(enabled);
 		this._presetsItem.menu.removeAll();
 		for (let i = 0; i < this.config.presets.length; ++i) {
 			let preset = this.config.presets[i];
@@ -211,7 +220,18 @@ EqualizerApplet.prototype = {
 			}));
 			this._presetsItem.menu.addMenuItem(menuItem);
 		}
-		this.set_applet_tooltip(_("Preset: ") + this.config.preset());
+		let state = enabled ? _("Equalizer <b>enabled</b>") : _("Equalizer <b>disabled</b>");
+		let pre = enabled ? "\n" + _("Preset: <b>") + this.config.preset() + "</b>" : "";
+		this._applet_tooltip._tooltip.get_clutter_text().set_markup(state + pre);
+	},
+
+	on_applet_removed_from_panel: function() {
+	  	try {
+	    	if (this.config._monitor) {
+		    	this.config._monitor.cancel();
+			}
+			Signals._disconnectAll(Config.prototype);
+		} catch(e) {global.log("Equalizer: " + e);}
 	}
 };
 

@@ -160,7 +160,7 @@ EqualizerApplet.prototype = {
 			this.config.connect("changed", Lang.bind(this, this._configChanged));
 
 			Gtk.IconTheme.get_default().append_search_path(metadata.path);
-			this.set_applet_icon_symbolic_name("equalizer");
+			this.set_applet_icon_symbolic_name("equalizer_off");
 
 			this.menuManager = new PopupMenu.PopupMenuManager(this);
 			this.menu = new Applet.AppletPopupMenu(this, orientation);
@@ -223,6 +223,8 @@ EqualizerApplet.prototype = {
 		let state = enabled ? _("Equalizer <b>enabled</b>") : _("Equalizer <b>disabled</b>");
 		let pre = enabled ? "\n" + _("Preset: <b>") + this.config.preset() + "</b>" : "";
 		this._applet_tooltip._tooltip.get_clutter_text().set_markup(state + pre);
+		this._applet_tooltip._tooltip.get_clutter_text().set_markup(state + pre);
+		this.set_applet_icon_symbolic_name(enabled ? "equalizer" : "equalizer_off");
 	},
 
 	on_applet_removed_from_panel: function() {

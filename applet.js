@@ -1,15 +1,22 @@
-const Lang = imports.lang;
-const Signals = imports.signals;
+// Drugwash, 2022 ; GPL v2+
 const Applet = imports.ui.applet;
 const AppletManager = imports.ui.appletManager;
-const Util = imports.misc.util;
-const Ext = imports.ui.extension;
-const PopupMenu = imports.ui.popupMenu;
-const GLib = imports.gi.GLib;
-const Gio = imports.gi.Gio;
-const Gtk = imports.gi.Gtk;
 const Cinnamon = imports.gi.Cinnamon;
+const Cvc = imports.gi.Cvc;
+const Ext = imports.ui.extension;
 const Gettext = imports.gettext;
+const Gio = imports.gi.Gio;
+const GLib = imports.gi.GLib;
+const Gtk = imports.gi.Gtk;
+const Lang = imports.lang;
+const Main = imports.ui.main;
+const MessageTray = imports.ui.messageTray;
+const PopupMenu = imports.ui.popupMenu;
+const Settings = imports.ui.settings;
+const Signals = imports.signals;
+const St = imports.gi.St;
+const Util = imports.misc.util;
+
 const ITYPE = imports.gi.St.IconType.SYMBOLIC;
 const UUID = "pa-equalizer2@drugwash";
 
@@ -27,6 +34,9 @@ const EQPRESETS = EQCONFIG + ".availablepresets";
 const PRESETDIR1 = CONFIG_DIR + "/presets/";
 const PRESETDIR2 = "/usr" + LOCAL + "/share/" + EXEC + "/presets/";
 
+const EQON = "equalizer";
+const EQOFF = "equalizer_off";
+const DBG = false;
 Gettext.bindtextdomain(UUID, GLib.get_home_dir() + "/.local/share/locale")
 
 function _(str) {
@@ -156,11 +166,18 @@ EqualizerApplet.prototype = {
 		if (EXEC == "")
 			AppletManager._removeAppletFromPanel(UUID, this.id);
 		try {
+			this._notification = null; this.restore = null;
+            this.settings = new Settings.AppletSettings(this, metadata.uuid, this.id);
+            this.settings.bind("notify", "notify");
+			this.state = _("Equalizer <b>disabled</b>"); //this.notify=true;
 			this.config = new Config();
 			this.config.connect("changed", Lang.bind(this, this._configChanged));
+			this.cvctrl = new Cvc.MixerControl({ name: "SndMixer" });
+            this.cvctrl.connect("output-added", Lang.bind(this, this._addDevice));
+			this.cvctrl.connect("active-output-update", Lang.bind(this, this._outputChanged, "update"));
 
 			Gtk.IconTheme.get_default().append_search_path(metadata.path);
-			this.set_applet_icon_symbolic_name("equalizer_off");
+			this.set_applet_icon_symbolic_name(EQOFF);
 
 			this.menuManager = new PopupMenu.PopupMenuManager(this);
 			this.menu = new Applet.AppletPopupMenu(this, orientation);
@@ -180,7 +197,16 @@ EqualizerApplet.prototype = {
 //				GLib.spawn_command_line_async(EXEGUI);
 				Util.spawnCommandLineAsync(EXEGUI, null, null);
 			});
-			//_context_menu_item_help
+		// notification toggle
+			this.notify_menu =  new PopupMenu.PopupIndicatorMenuItem(_("Show notifications"));
+			this.notify_menu.setOrnament(1, this.notify); // OrnamentType.CHECK
+			this.notify_menu.connect('activate', Lang.bind(this, function() {
+				this.notify = !this.notify;
+				this.settings.setValue("notify", this.notify);
+				this.notify_menu.setOrnament(1, this.notify); // OrnamentType.CHECK
+			}));
+			this._applet_context_menu.addMenuItem(this.notify_menu);
+		//_context_menu_item_help
 			if (GLib.file_test(HLPTXT, GLib.FileTest.EXISTS)) {
 				this.help_menu =  new PopupMenu.PopupIconMenuItem(_("Help"),
 					"dialog-question", ITYPE);
@@ -191,11 +217,18 @@ EqualizerApplet.prototype = {
 				this._applet_context_menu.addMenuItem(this.help_menu);
 			} else global.logError(UUID + _(": missing help file ") + HLPTXT);
 			//_context_menu_item_reload_applet
-			let cmnd = `dbus-send --session --dest=org.Cinnamon.LookingGlass --type=method_call ` +
+/*			let cmnd = `dbus-send --session --dest=org.Cinnamon.LookingGlass --type=method_call ` +
 							`/org/Cinnamon/LookingGlass org.Cinnamon.LookingGlass.ReloadExtension ` +
 							`string:'${UUID}' string:'APPLET'`;
-			this._applet_context_menu.addCommandlineAction(_("Reload applet [forced]"), cmnd);
-
+			this._applet_context_menu.addCommandlineAction(_("Reload applet [forced]"), cmnd); */
+			this.reload_menu = new PopupMenu.PopupIconMenuItem(_("Reload applet [forced]"), "reload", St.IconType.FULLCOLOR);
+			this.reload_menu.connect('activate', Lang.bind(this, function() {
+				Ext.reloadExtension(UUID, Ext.Type.APPLET);
+			}));
+			this._applet_context_menu.addMenuItem(this.reload_menu);
+			this._applet_tooltip._tooltip.use_markup = true;
+			this._applet_tooltip._tooltip.clutter_text.ellipsize = false;
+			this.cvctrl.open();
 			this._configChanged();
 		} catch (e) {
 			global.logError(e);
@@ -220,20 +253,86 @@ EqualizerApplet.prototype = {
 			}));
 			this._presetsItem.menu.addMenuItem(menuItem);
 		}
-		let state = enabled ? _("Equalizer <b>enabled</b>") : _("Equalizer <b>disabled</b>");
+		this.set_applet_icon_symbolic_name(enabled ? EQON : EQOFF);
+		this._setTooltip(enabled);
+		if (this.restore) this._restore();
+	},
+	_setTooltip: function(enabled, out="") {
+		this.state = enabled ? _("Equalizer <b>enabled</b>") : _("Equalizer <b>disabled</b>");
 		let pre = enabled ? "\n" + _("Preset: <b>") + this.config.preset() + "</b>" : "";
-		this._applet_tooltip._tooltip.get_clutter_text().set_markup(state + pre);
-		this._applet_tooltip._tooltip.get_clutter_text().set_markup(state + pre);
-		this.set_applet_icon_symbolic_name(enabled ? "equalizer" : "equalizer_off");
+		let msg = out ? "\n" + out + pre : pre;
+		this._applet_tooltip._tooltip.get_clutter_text().set_markup(this.state + msg);
+		this._applet_tooltip._tooltip.get_clutter_text().set_markup(this.state + msg);
+		return (out + pre);
+	},
+// these won't work unless Cvc is open() ===>
+	_addDevice: function(control, id) {
+		let d = this.cvctrl["lookup_output_id"](id);
+		if (d.description.match(/(Multiband\sEQ|Plugin|LADSPA)/g)) return;
+		this._log("added output: " + d.description + ", " + d.origin);
+	},
+	_outputChanged: function(control, id, type="state") {
+		let enabled = this.config.enabled();
+		let out = this.cvctrl.get_default_sink();
+		if (enabled === false || type=="state"|| !out) return;
+		let d = this.cvctrl["lookup_output_id"](id);
+		let desc = d.description; let orig = d.origin;
+		if (!orig || desc.match(/(Multiband\sEQ|Plugin|LADSPA)/g)) {
+			let msg = this._setTooltip(enabled, desc.match(/\s(on\s.*)/)[1]);
+			if (this.notify) this._notifyMessage(EQON, msg);
+			this._log("found EQ, skipping");
+			return;
+		}
+		this.restore = true;
+		this.config.toggle();
+	},
+	_restore: function() {
+		this.restore = null;
+		this.config.toggle();
+		this._setTooltip(enabled);
+		if (this.notify) this._notifyMessage(EQON);
+		this._log(type + " output: " + desc + " < " + enabled.toString());
+	},
+// <===
+	_ensureSource: function() {
+		if (!this._source) {
+			this._source = new MessageTray.Source();
+			this._source.connect('destroy', () => this._source = null );
+			if (Main.messageTray) Main.messageTray.add(this._source);
+		}
+	},
+
+	_notifyMessage: function(iconName, text="") {
+		if (this._notification)
+			this._notification.destroy();
+		this._ensureSource();
+		let icon = new St.Icon({
+			icon_name: iconName,
+			icon_type: St.IconType.SYMBOLIC,
+			icon_size: 32
+		});
+		this._notification = new MessageTray.Notification(this._source, this.state, text, {
+			icon: icon, titleMarkup: true, bodyMarkup: true, bannerMarkup: true
+		});
+		this._notification.setUrgency(MessageTray.Urgency.NORMAL);
+		this._notification.setTransient(true);
+		this._notification.connect('destroy', Lang.bind(this, function() {
+			this._notification = null;
+		}));
+		this._source.notify(this._notification);
 	},
 
 	on_applet_removed_from_panel: function() {
 	  	try {
-	    	if (this.config._monitor) {
-		    	this.config._monitor.cancel();
+			if (this.config._monitor) {
+				this.config._monitor.cancel();
 			}
 			Signals._disconnectAll(Config.prototype);
-		} catch(e) {global.log("Equalizer: " + e);}
+			this.settings.finalize();
+		} catch(e) {global.log("Equalizer2: " + e);}
+	},
+	_log: function(strg) {
+		if (DBG) global.log(strg);
 	}
 };
 

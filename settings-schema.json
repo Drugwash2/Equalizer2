@@ -1,0 +1,10 @@
+{
+  "section1": {
+    "type": "section",
+    "description": "Preferences"
+  },
+	"notify" : {
+		"type": "generic",
+		"default" : true
+	}
+}
